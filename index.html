@@ -1,63 +1,175 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-  <title>Snake Game</title>
-  <style>
-    body {
-      width: 400px;
-      height: 400px;
-    }
-    canvas {
-      background-color: beige;
-    }
-    #gameOver {
-      display: 无;
-      position: relative;
-      top: -50%;
-      left: 50%;
-      transform: translate(-50%， -50%);
-      text-align: center;
-      font-size: 24px;
-    }
-    #info {
-      text-align: center;
-      position: absolute;
-      top: 430px;
-      width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    #info p {
-      line-height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-  </style>
+    <title>贪吃蛇游戏</title>
+    <style>
+        /* 设置游戏画布样式 */
+        #gameCanvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 设置按钮样式 */
+        #restartButton {
+            display: 无; /* 初始时隐藏按钮 */
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: 无;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        #restartButton:hover {
+            background-color: #45a049;
+        }
+
+        #restartButton:active {
+            background-color: #3e8e41;
+        }
+    </style>
 </head>
 <body>
-  <canvas id="snake" width="400" height="400"></canvas>
-   <script nonce="" src="snake.js"></script>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <button id="restartButton">重新开始</button>
 
-  <script>
-    // 生成随机的nonce值
-    const nonceBytes = new Uint8Array(16); // 16个字节，128位
-    window.crypto.getRandomValues(nonceBytes);
-    const base64Nonce = btoa(String.fromCharCode(...nonceBytes));
+    <script>
+        document.addEventListener('DOMContentLoaded'， () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
 
-    // 获取script标签并设置nonce属性
-    const scriptTag = document.querySelector('script[src="snake.js"]');
-    scriptTag.setAttribute('nonce', base64Nonce);
-  </script>
-  <div id="gameOver">
-    GAME OVER<br>
-    得分: <span id="scoreSpan">0</span><br>
-    <button id="restart">重新开始</button>
-  </div>
-  <div id="info">
-    <p>使用键盘的方向键控制蛇的移动</p>
-    <p>空格键可以暂停/恢复游戏</p>
-  </div>
+            const CELL_SIZE = 20;
+            const GRID_SIZE = canvas.width / CELL_SIZE;
+            const GAME_SPEED = 100; // 100毫秒移动一格
+            const INITIAL_SNAKE_LENGTH = 1; // 初始长度为1格
+            const SCORE_PER_SEGMENT = 10; // 每格蛇的长度计为10分
+            let snake = [{ x: GRID_SIZE / 2， y: GRID_SIZE / 2 }];
+            let direction = { x: 0， y: -1 };
+            let food = generateFood();
+            let gameOver = false;
+            let score = 0;
+
+            function generateFood() {
+                return {
+                    x: Math.floor(Math.random() * GRID_SIZE)，
+                    y: Math.floor(Math.random() * GRID_SIZE)
+                };
+            }
+
+            function drawSnake() {
+                ctx.fillStyle = 'green';
+                snake.forEach(segment => {
+                    ctx.fillRect(segment.x * CELL_SIZE, segment.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                });
+            }
+
+            function drawFood() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(food.x * CELL_SIZE, food.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+
+            function update() {
+                if (gameOver) return;
+
+                const head = { x: snake[snake.length - 1]。x + direction.x， y: snake[snake.length - 1]。y + direction.y };
+
+                // 检查是否撞墙
+                if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+                    gameOver = true;
+                    return;
+                }
+
+                // 检查是否撞到自身
+                for (let i = 0; i < snake.length - 1; i++) {
+                    if (snake[i]。x === head.x && snake[i]。y === head.y) {
+                        gameOver = true;
+                        return;
+                    }
+                }
+
+                snake.push(head);
+
+                if (head.x === food.x && head.y === food.y) {
+                    food = generateFood();
+                    score += SCORE_PER_SEGMENT;
+                } else {
+                    snake.shift();
+                }
+            }
+
+            function clearCanvas() {
+                ctx.clearRect(0， 0, canvas.width, canvas.height);
+            }
+
+            function drawGameOver() {
+                ctx.fillStyle = 'black';
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('游戏结束', canvas.width / 2, canvas.height / 2);
+                ctx.fillText('得分: ' + score, canvas.width / 2, canvas.height / 2 + 40);
+                document.getElementById('restartButton')。style。display = 'block'; // 显示按钮
+            }
+
+            function restartGame() {
+                snake = [{ x: GRID_SIZE / 2， y: GRID_SIZE / 2 }];
+                direction = { x: 0， y: -1 };
+                food = generateFood();
+                gameOver = false;
+                score = 0;
+                gameLoopIterations = 0;
+                document.getElementById('restartButton')。style。display = 'none'; // 隐藏按钮
+            }
+
+            let gameLoopIterations = 0;
+            function gameLoop() {
+                clearCanvas();
+
+                if (gameLoopIterations > INITIAL_SNAKE_LENGTH) {
+                    update();
+                } else {
+                    gameLoopIterations++;
+                }
+
+                drawSnake();
+                drawFood();
+
+                if (gameOver) {
+                    drawGameOver();
+                    document.getElementById('restartButton')。addEventListener('click'， () => {
+                        restartGame();
+                        gameLoop();
+                    }， { once: true });
+                    return;
+                }
+
+                setTimeout(gameLoop, GAME_SPEED);
+            }
+
+            document.addEventListener('keydown'， event => {
+                if (gameOver) return;
+
+                switch (event.key) {
+                    case 'ArrowUp':
+                        if (direction.y !== 1) direction = { x: 0， y: -1 };
+                        break;
+                    case 'ArrowDown':
+                        if (direction.y !== -1) direction = { x: 0， y: 1 };
+                        break;
+                    case 'ArrowLeft':
+                        if (direction.x !== 1) direction = { x: -1， y: 0 };
+                        break;
+                    case 'ArrowRight':
+                        if (direction.x !== -1) direction = { x: 1， y: 0 };
+                        break;
+                }
+            });
+
+            gameLoop();
+        });
+    </script>
 </body>
 </html>

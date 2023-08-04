@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
   <title>Snake Game</title>
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self'">
   <style>
     body {
       width: 400px;
@@ -13,11 +12,11 @@
       background-color: beige;
     }
     #gameOver {
-      display: 无;
+      display: none;
       position: relative;
       top: -50%;
       left: 50%;
-      transform: translate(-50%， -50%);
+      transform: translate(-50%, -50%);
       text-align: center;
       font-size: 24px;
     }
@@ -72,6 +71,7 @@
     let gameover = false;
     let isPaused = false;
     let foodVisible = true;
+    let lastUserInputTime = 0;
 
     // 生成食物
     function createFood() {
@@ -92,7 +92,7 @@
     // 检查蛇身碰撞
     function checkSnakeCollision() {
       for (let i = 1; i < snake.length; i++) {
-        if (snakeHead.x === snake[i]。x && snakeHead.y === snake[i]。y) {
+        if (snakeHead.x === snake[i].x && snakeHead.y === snake[i].y) {
           return true;
         }
       }
@@ -111,7 +111,7 @@
     }
 
     // 绘制矩形
-    function drawRect(x， y， width， height， color) {
+    function drawRect(x, y, width, height, color) {
       ctx.fillStyle = color;
       ctx.fillRect(x, y, width, height);
     }
@@ -120,19 +120,19 @@
     function gameOver() {
       gameover = true;
       isPaused = true;
-      gameOverDiv.style。display = 'block';
+      gameOverDiv.style.display = 'block';
     }
 
     // 重新开始游戏
     function restartGame() {
       gameover = false;
       score = 0;
-      snake = [{x: 150， y: 150}， {x: 140， y: 150}]; // 重置蛇的初始状态
-      snakeHead = {x: 150， y: 150};
+      snake = [{x: 150, y: 150}, {x: 140, y: 150}]; // 重置蛇的初始状态
+      snakeHead = {x: 150, y: 150};
       direction = 'right';
       scoreSpan.textContent = score; // 重置分数显示
       createFood(); // 生成新的食物
-      gameOverDiv.style。display = 'none';
+      gameOverDiv.style.display = 'none';
       isPaused = false;
     }
 
@@ -162,7 +162,7 @@
     // 绘制
     function draw() {
       // 清空画布
-      ctx.clearRect(0， 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // 绘制蛇
       for (let i = 0; i < snake.length; i++) {
@@ -177,22 +177,19 @@
     }
 
     // 游戏循环
-    function loop() {
+    function loop(timestamp) {
       if (!gameover) {
-        update();
-        draw();
+        const timeSinceLastInput = timestamp - lastUserInputTime;
+        if (timeSinceLastInput >= speed) {
+          update();
+          draw();
+          foodVisible = !foodVisible;
+          lastUserInputTime = timestamp;
+        }
       }
 
-      // 更新频率控制
-      speed = Math.max(100 - (score)， 60);
-
-      setTimeout(function() {
-        requestAnimationFrame(loop);
-      }, speed);
-
-      if (!isPaused) {
-        foodVisible = !foodVisible;
-      }
+      // 使用 requestAnimationFrame 更新游戏循环
+      requestAnimationFrame(loop);
     }
 
     // 输入处理
@@ -215,7 +212,7 @@
 
     // 开始游戏
     createFood();
-    loop();
+    requestAnimationFrame(loop);
 
   </script>
 
